@@ -26,7 +26,7 @@ RUN \
     && yum -y install cronie \
     #Compiler et installer BACKUPPC-XS
     && git clone https://github.com/backuppc/backuppc-xs.git /root/backuppc-xs --branch $BACKUPPC_XS_VERSION \
-    && cd /root/backuppc-xs \
+    && cd /root/backuppc-xs
     #&& perl Makefile.PL && make && make test && make install
 RUN cd /root/backuppc-xs && perl Makefile.PL && make && make test && make install
     #Compiler et installer RSYNC-BPC
