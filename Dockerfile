@@ -48,9 +48,9 @@ COPY entrypoint.sh /entrypoint.sh
 
 EXPOSE 80 22
 
-#ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/entrypoint.sh"]
 
-#CMD ["/usr/sbin/apachectl", "-DFOREGROUND"]
-#CMD ["/usr/sbin/crond", "-f", "-d8"]
+CMD ["/usr/sbin/apachectl", "-DFOREGROUND"]
+CMD ["/usr/sbin/crond", "-f", "-d8"]
 #CMD ["/usr/sbin/sshd", "-D", "-e"]
 #CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
