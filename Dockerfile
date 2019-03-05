@@ -31,13 +31,13 @@ RUN \
 #RUN cd /root/backuppc-xs && perl Makefile.PL && make && make test && make install
     #Compiler et installer RSYNC-BPC
     #& git clone https://github.com/backuppc/rsync-bpc.git /root/rsync-bpc --branch $RSYNC_BPC_VERSION \
-RUN git clone https://github.com/backuppc/rsync-bpc.git /root/rsync-bpc --branch $RSYNC_BPC_VERSION
+RUN git clone https://github.com/backuppc/rsync-bpc.git /root/rsync-bpc --branch $RSYNC_BPC_VERSION \
     && cd /root/rsync-bpc \
     && ./configure && make reconfigure && make && make install \
     #Compiler et installer PAR2
     && git clone https://github.com/Parchive/par2cmdline.git /root/par2cmdline --branch $PAR2_VERSION \
     && cd /root/par2cmdline \
-    && ./automake.sh && ./configure && make && make check && make install \
+    && ./automake.sh && ./configure && make && make check && make install
     #Configurer MSMTP pour les mails
     #&& rm -f /usr/sbin/sendmail && ln -s /usr/bin/msmtp /usr/sbin/sendmail \
     #Télécharger BackupPC
