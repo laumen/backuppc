@@ -13,7 +13,6 @@ ENV BACKUPPC_USERNAME backuppc
 ENV BACKUPPC_GROUPNAME backuppc
 
 #VOLUME ["/etc/backuppc", "/home/backuppc", "/data/backuppc", "/var/spool/cron/crontabs", "/etc/httpd"]
-RUN echo "Test"
 
 #Mise à jour
 RUN \
@@ -23,11 +22,10 @@ RUN \
     && yum -y install perl-Archive-Zip perl-XML-RSS perl-CGI perl-File-Listing Perl-Test-Most \
     && yum -y install samba-client nfs-utils openssl \
     && yum -y install msmtp gcc gcc-c++ automake git perl-devel expat-devel atttr wget libacl-devel popt-devel \
-    && yum -y install cronie \
+    && yum -y install cronie
     #Compiler et installer BACKUPPC-XS
-    && git clone https://github.com/backuppc/backuppc-xs.git /root/backuppc-xs --branch $BACKUPPC_XS_VERSION \
-    && cd /root/backuppc-xs
-    #&& perl Makefile.PL && make && make test && make install
+RUN git clone https://github.com/backuppc/backuppc-xs.git /root/backuppc-xs --branch $BACKUPPC_XS_VERSION \
+    && cd /root/backuppc-xs && perl Makefile.PL && make && make test && make install
 #RUN cd /root/backuppc-xs && perl Makefile.PL && make && make test && make install
     #Compiler et installer RSYNC-BPC
     #& git clone https://github.com/backuppc/rsync-bpc.git /root/rsync-bpc --branch $RSYNC_BPC_VERSION \
