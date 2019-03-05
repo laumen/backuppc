@@ -28,7 +28,7 @@ RUN \
     && git clone https://github.com/backuppc/backuppc-xs.git /root/backuppc-xs --branch $BACKUPPC_XS_VERSION \
     && cd /root/backuppc-xs \
     #&& perl Makefile.PL && make && make test && make install
-RUN cd /root/backuppc-xs && perl Makefile.PL    
+RUN cd /root/backuppc-xs && perl Makefile.PL && make && make test && make install
     #Compiler et installer RSYNC-BPC
     #& git clone https://github.com/backuppc/rsync-bpc.git /root/rsync-bpc --branch $RSYNC_BPC_VERSION \
     #&& cd /root/rsync-bpc \
