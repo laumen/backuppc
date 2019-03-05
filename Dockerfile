@@ -19,7 +19,7 @@ RUN \
     yum -y update \
     #Installations des dépendances
     && yum -y install httpd epel-release mod_ldap \
-    && yum -y install perl-Archive-Zip perl-XML-RSS perl-CGI perl-File-Listing Perl-Test-Most \
+    && yum -y install perl-Archive-Zip perl-XML-RSS perl-CGI perl-File-Listing Perl-Test-Most perl-ExtUtils-MakeMaker \
     && yum -y install samba-client nfs-utils openssl \
     && yum -y install msmtp gcc gcc-c++ automake git perl-devel expat-devel atttr wget libacl-devel popt-devel \
     && yum -y install cronie
