@@ -42,8 +42,8 @@ RUN \
     && curl -o /root/BackupPC-$BACKUPPC_VERSION.tar.gz -L https://github.com/backuppc/backuppc/releases/download/$BACKUPPC_VERSION/BackupPC-$BACKUPPC_VERSION.tar.gz \
     #Créer le compte backuppc
     && mkdir -p /home/backuppc && cd /home/backuppc \
-    && touch /firstrun \
-    && rm -rf /root/backuppc-xs /root/rsync-bpc /root/par2cmdline
+    && touch /firstrun
+    #&& rm -rf /root/backuppc-xs /root/rsync-bpc /root/par2cmdline
 
 COPY entrypoint.sh /entrypoint.sh
 
