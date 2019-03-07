@@ -1,57 +1,109 @@
-FROM centos:7
+FROM ubuntu:18.04
 
-LABEL maintainer="Laurent"
+ENV bpcver 4.3.0
+ENV bpcxsver 0.58
+ENV rsyncbpcver 3.0.9.13
+ENV password test
 
-ENV BACKUPPC_VERSION 4.3.0
-ENV BACKUPPC_XS_VERSION 0.58
-ENV RSYNC_BPC_VERSION master
-ENV PAR2_VERSION v0.8.0
-ENV WEB_BACKUPPC backuppc
-ENV WEB_PASSWORD password
-#ENV ROOT_PASSWORD root
-ENV BACKUPPC_USERNAME backuppc
-ENV BACKUPPC_GROUPNAME backuppc
+# Needed only when installing
+RUN apt-get update
+RUN apt-get install -q -y apache2 apache2-utils libapache2-mod-perl2 glusterfs-client par2 perl smbclient rsync tar sendmail gcc zlib1g zlib1g-dev libapache2-mod-scgi rrdtool git make perl-doc libarchive-zip-perl libfile-listing-perl libxml-rss-perl libcgi-session-perl libacl1-dev
+#echo -n "Give password or leave empty to generate one: "
+#read -s PASSWORD
+#echo
+#if [[ $PASSWORD == "" ]]; then
+#  apt-get -qq -y install pwgen
+#  PASSWORD=`pwgen -s -1 32`
+#  echo "Generated password: $PASSWORD"
+#else
+#  echo "Password given is: $PASSWORD"
+#fi
+RUN echo "$PASSWORD" > /root/password
+RUN chmod 600 /root/password
+RUN mkdir /srv/backuppc
+RUN ln -s /srv/backuppc/ /var/lib/backuppc
+RUN adduser --system --home /var/lib/backuppc --group --disabled-password --shell /bin/false backuppc
+#RUN echo "backuppc:$PASSWORD" | sudo chpasswd backuppc
+RUN mkdir -p /var/lib/backuppc/.ssh
+RUN chmod 700 /var/lib/backuppc/.ssh
+RUN echo -e "BatchMode yes\nStrictHostKeyChecking no" > /var/lib/backuppc/.ssh/config
+RUN ssh-keygen -q -t rsa -b 4096 -N '' -C "BackupPC key" -f /var/lib/backuppc/.ssh/id_rsa
+RUN chmod 600 /var/lib/backuppc/.ssh/id_rsa
+RUN chmod 644 /var/lib/backuppc/.ssh/id_rsa.pub
+RUN chown -R backuppc:backuppc /var/lib/backuppc/.ssh
 
-#VOLUME ["/etc/backuppc", "/home/backuppc", "/data/backuppc", "/var/spool/cron/crontabs", "/etc/httpd"]
+RUN apt-get -y install wget
 
-#Mise à jour
-RUN \
-    yum -y update \
-    #Installations des dépendances
-    && yum -y install httpd epel-release mod_ldap \
-    && yum -y install perl-Archive-Zip perl-XML-RSS perl-CGI perl-File-Listing Perl-Test-Most perl-ExtUtils-MakeMaker \
-    && yum -y install samba-client nfs-utils openssl \
-    && yum -y install msmtp gcc gcc-c++ automake git perl-devel expat-devel atttr wget libacl-devel popt-devel \
-    && yum -y install cronie
-    #Compiler et installer BACKUPPC-XS
-RUN git clone https://github.com/backuppc/backuppc-xs.git /root/backuppc-xs --branch $BACKUPPC_XS_VERSION \
-    && cd /root/backuppc-xs && perl Makefile.PL && make && make test && make install
-#RUN cd /root/backuppc-xs && perl Makefile.PL && make && make test && make install
-    #Compiler et installer RSYNC-BPC
-    #& git clone https://github.com/backuppc/rsync-bpc.git /root/rsync-bpc --branch $RSYNC_BPC_VERSION \
-RUN git clone https://github.com/backuppc/rsync-bpc.git /root/rsync-bpc \
-    && cd /root/rsync-bpc \
-    && ./configure && make reconfigure && make && make install \
-    #Compiler et installer PAR2
-    && git clone https://github.com/Parchive/par2cmdline.git /root/par2cmdline --branch $PAR2_VERSION \
-    && cd /root/par2cmdline \
-    && ./automake.sh && ./configure && make && make check && make install
-    #Configurer MSMTP pour les mails
-    #&& rm -f /usr/sbin/sendmail && ln -s /usr/bin/msmtp /usr/sbin/sendmail \
-    #Télécharger BackupPC
-    #&& curl -o /root/BackupPC-$BACKUPPC_VERSION.tar.gz -L https://github.com/backuppc/backuppc/releases/download/$BACKUPPC_VERSION/BackupPC-$BACKUPPC_VERSION.tar.gz \
-    #Créer le compte backuppc
-    #&& mkdir -p /home/backuppc && cd /home/backuppc \
-    #&& touch /firstrun
-    #&& rm -rf /root/backuppc-xs /root/rsync-bpc /root/par2cmdline
+# Fetch and install latest stable releases
+RUN wget https://github.com/backuppc/backuppc-xs/releases/download/$bpcxsver/BackupPC-XS-$bpcxsver.tar.gz && \
+	wget https://github.com/backuppc/rsync-bpc/releases/download/$rsyncbpcver/rsync-bpc-$rsyncbpcver.tar.gz && \
+	wget https://github.com/backuppc/backuppc/releases/download/$bpcver/BackupPC-$bpcver.tar.gz && \
+	tar -zxf BackupPC-XS-$bpcxsver.tar.gz && \
+	tar -zxf rsync-bpc-$rsyncbpcver.tar.gz && \
+	tar -zxf BackupPC-$bpcver.tar.gz && \
+	cd BackupPC-XS-$bpcxsver && \
+	perl Makefile.PL && \
+	make && \
+	make test && \
+	make install && \
+	cd ../rsync-bpc-$rsyncbpcver && \
+	./configure && \
+	make && \
+	make install && \
+	cd ../BackupPC-$bpcver
 
-COPY entrypoint.sh /entrypoint.sh
+# To fetch and install the latest development code instead, replace the above section with:
+#git clone https://github.com/backuppc/backuppc.git
+#git clone https://github.com/backuppc/backuppc-xs.git
+#git clone https://github.com/backuppc/rsync-bpc.git
+#cd backuppc-xs
+#perl Makefile.PL
+#make
+#make test
+#make install
+#cd ../rsync-bpc
+#./configure
+#make
+#make install
+#cd ../backuppc
+#./makeDist --nosyntaxCheck --releasedate "`date -u "+%d %b %Y"`" --version ${bpcver}git
+#tar -zxf dist/BackupPC-${bpcver}git.tar.gz
+#cd BackupPC-${bpcver}git
 
-EXPOSE 80 22
+# When installing, use this
+RUN cd ../BackupPC-$bpcver && ./configure.pl --batch --cgi-dir /var/www/cgi-bin/BackupPC --data-dir /var/lib/backuppc --hostname backuppc --html-dir /var/www/html/BackupPC --html-dir-url /BackupPC --install-dir /usr/local/BackupPC
 
-#ENTRYPOINT ["/entrypoint.sh"]
+# When upgrading, use this instead:
+# ./configure.pl --batch --config-path /etc/BackupPC/config.pl
 
-#CMD ["/usr/sbin/apachectl", "-DFOREGROUND"]
-#CMD ["/usr/sbin/crond", "-f", "-d8"]
-#CMD ["/usr/sbin/sshd", "-D", "-e"]
-#CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+# The following is good also when upgrading, unless you have modified the files yourself
+RUN cd ../BackupPC-$bpcver && cp httpd/BackupPC.conf /etc/apache2/conf-available/backuppc.conf
+RUN cd ../BackupPC-$bpcver && sed -i "/deny\ from\ all/d" /etc/apache2/conf-available/backuppc.conf
+RUN cd ../BackupPC-$bpcver && sed -i "/deny\,allow/d" /etc/apache2/conf-available/backuppc.conf
+RUN cd ../BackupPC-$bpcver && sed -i "/allow\ from/d" /etc/apache2/conf-available/backuppc.conf
+
+# Note that changing the apache user and group (next two commands) could cause other services
+# provided by apache to fail. There are alternatives if you don't want to change the apache
+# user: use SCGI or a setuid BackupPC_Admin script - see the docs.
+RUN cd ../BackupPC-$bpcver && sed -i "s/export APACHE_RUN_USER=www-data/export APACHE_RUN_USER=backuppc/" /etc/apache2/envvars
+RUN cd ../BackupPC-$bpcver && sed -i "s/export APACHE_RUN_GROUP=www-data/export APACHE_RUN_GROUP=backuppc/" /etc/apache2/envvars
+RUN cd ../BackupPC-$bpcver && echo '<html><head><meta http-equiv="refresh" content="0; url=/BackupPC_Admin"></head></html>' > /var/www/html/index.html
+RUN a2enconf backuppc
+RUN a2enmod cgid
+RUN service apache2 restart
+
+RUN cd ../BackupPC-$bpcver && cat systemd/init.d/debian-backuppc 
+
+#RUN cp systemd/init.d/debian-backuppc /etc/init.d/backuppc
+#RUN chmod 755 /etc/init.d/backuppc
+#RUN update-rc.d backuppc defaults
+#RUN chmod u-s /var/www/cgi-bin/BackupPC/BackupPC_Admin
+RUN touch /etc/BackupPC/BackupPC.users
+RUN sed -i "s/$Conf{CgiAdminUserGroup}.*/$Conf{CgiAdminUserGroup} = 'backuppc';/" /etc/BackupPC/config.pl
+RUN sed -i "s/$Conf{CgiAdminUsers}.*/$Conf{CgiAdminUsers} = 'backuppc';/" /etc/BackupPC/config.pl
+RUN chown -R backuppc:backuppc /etc/BackupPC
+
+# Needed only when installing
+RUN echo $PASSWORD | htpasswd -i /etc/BackupPC/BackupPC.users backuppc
+
+CMD /usr/local/BackupPC/bin/BackupPC
